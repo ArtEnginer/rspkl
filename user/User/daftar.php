@@ -65,142 +65,140 @@ if ($currentDate == $lastDate){
 
 // Menghasilkan nomor urut dengan format yang diinginkan
 $newKode = 'A' . sprintf("%03s", $no);
-//proses
-   if(isset($_POST['simpan'])){
+// Mendapatkan hari ini
+if (isset($_POST['simpan'])) {
+  $id_pendaftaran = $_POST['id_pendaftaran'];
+  $id_user = $_SESSION['id_user'];
+  $nama_poli = $_POST['nama_poli'];
+  $tanggal_daftar = $_POST['tanggal_daftar'];
+  $jam_daftar = $_POST['jam_daftar'];
+  $cara_bayar = $_POST['cara_bayar'];
+  $status = "belum";
+  $nama_dokter = $_POST['nama_dokter'];
 
-    
-$id_pendaftaran = $_POST['id_pendaftaran'];
-$id_user = $_SESSION['id_user'];
-$nama_poli = $_POST['nama_poli'];
-$tanggal_daftar = $_POST['tanggal_daftar'];
-$jam_daftar = $_POST['jam_daftar'];
-$cara_bayar = $_POST['cara_bayar'];
-$status="belum";
-$nama_dokter = $_POST['nama_dokter'];
+  // Mendapatkan hari ini
+  $hariIni = date('l');
 
+  // Mengubah nama hari menjadi nama kolom dalam tabel
+  $namaHari = '';
+  switch ($hariIni) {
+    case 'Monday':
+      $namaHari = 'Senin';
+      break;
+    case 'Tuesday':
+      $namaHari = 'Selasa';
+      break;
+    case 'Wednesday':
+      $namaHari = 'Rabu';
+      break;
+    case 'Thursday':
+      $namaHari = 'Kamis';
+      break;
+    case 'Friday':
+      $namaHari = 'Jumat';
+      break;
+    case 'Saturday':
+      $namaHari = 'Sabtu';
+      break;
+    default:
+      break;
+  }
 
+  // Prepare and bind the query
+  $queryJadwal = "SELECT * FROM jadwal_dokter WHERE nama_dokter = ? AND $namaHari <> ''";
+  $stmt = mysqli_prepare($kon, $queryJadwal);
+  mysqli_stmt_bind_param($stmt, "s", $nama_dokter);
+  mysqli_stmt_execute($stmt);
+  $resultJadwal = mysqli_stmt_get_result($stmt);
+  $jumlahJadwal = mysqli_num_rows($resultJadwal);
 
- 
-    $cek = mysqli_num_rows(mysqli_query($kon,"SELECT * FROM pendaftaran WHERE id_user='$_SESSION[id_user]' AND status='belum'"));
+  if ($jumlahJadwal == 0) {
+    // Tidak ada jadwal dokter pada hari ini, tampilkan pesan
+    echo "<script>alert('Tidak ada jadwal dokter hari ini');</script>";
+  } else {
+    // Ada jadwal dokter pada hari ini, lanjutkan proses
+    $cek = mysqli_num_rows(mysqli_query($kon, "SELECT * FROM pendaftaran WHERE id_user='$_SESSION[id_user]' AND status='belum'"));
 
-    if ($cek > 0){
-    echo "<script>window.alert('anda sudah melakukan pendaftaran  ')
-    window.location='antriansaya.php'</script>";
-    }else {
-    mysqli_query($kon, "INSERT INTO pendaftaran (id_pendaftaran, id_user, nama_poli, cara_bayar,tanggal_daftar,jam_daftar,status,nama_dokter) VALUES ('$id_pendaftaran', '$id_user', '$nama_poli', '$cara_bayar', '$tanggal_daftar', '$jam_daftar', '$status', '$nama_dokter')");
-    echo "<script>window.alert('DATA SUDAH DISIMPAN')
-    window.location='antriansaya.php'</script>";
+    if ($cek > 0) {
+      echo "<script>alert('Anda sudah melakukan pendaftaran');
+      window.location='antriansaya.php'</script>";
+    } else {
+      mysqli_query($kon, "INSERT INTO pendaftaran (id_pendaftaran, id_user, nama_poli, cara_bayar, tanggal_daftar, jam_daftar, status, nama_dokter) VALUES ('$id_pendaftaran', '$id_user', '$nama_poli', '$cara_bayar', '$tanggal_daftar', '$jam_daftar', '$status', '$nama_dokter')");
+      echo "<script>alert('Data sudah disimpan');
+      window.location='antriansaya.php'</script>";
     }
-    }
-    ?>
+  }
+}
+?>
 
 
 
+<div class="card-body">
+  <h4 class="card-title">PENDAFTARAN PASIEN</h4>
+  <p class="card-description"><br></p>
+  <form class="forms-sample" action="daftar.php" method="post">
 
+    <input name="id_pendaftaran" type="hidden" id="id_pendaftaran" class="form-control" placeholder="Tidak perlu diisi" value="<?php echo $newKode; ?>" autofocus="on" readonly="readonly" />
 
-                <div class="card-body">
-                  <h4 class="card-title">PENDAFTARAN PASEN</h4>
-                  <p class="card-description">
-                   <BR>
-                  </p>
-                  <form class="forms-sample" action="daftar.php" method="post" >
+    <input type='hidden' class="form-control" type="text" value="<?php echo date("Y-m-d"); ?>" name="tanggal_daftar" readonly required='required' />
 
-                    
+    <input type='hidden' class="form-control" type="text" value="<?php echo date('H:i:s a'); ?>" name="jam_daftar" id="jam_daftar" readonly required='required' />
 
-                    <input name="id_pendaftaran" type="hidden" id="id_pendaftaran" class="form-control" placeholder="Tidak perlu di isi" value="<?php echo $newKode; ?>" autofocus="on" readonly="readonly" />
-                   
-                     <input type='hidden' class="form-control" type="text" value="<?php echo date("Y-m-d"); ?>" name="tanggal_daftar" ReadOnly required='required' />
+    <div class="form-group">
+      <label for="exampleInputEmail1">Poliklinik Tujuan</label>
+      <select name="nama_poli" id="nama_poli" class="form-control" required>
+        <?php
+        $query2 = "SELECT * FROM jenis_poli ORDER BY id_poli";
+        $tampil = mysqli_query($kon, $query2) or die(mysqli_error());
+        while ($data1 = mysqli_fetch_array($tampil)) {
+          ?>
+          <option value="<?php echo $data1['nama_poli']; ?>"><?php echo $data1['nama_poli']; ?></option>
+        <?php
+        }
+        ?>
+      </select>
+    </div>
 
-                     <input type='hidden' class="form-control" type="text" value="<?php echo date('H:i:s a'); ?>" name="jam_daftar" id="jam_daftar" ReadOnly required='required' />
+    <div class="form-group">
+      <label for="exampleInputEmail1">Nama Dokter</label>
+      <select name="nama_dokter" id="nama_dokter" class="form-control" required>
+      </select>
+    </div>
 
+    <div class="form-group">
+      <label for="exampleInputConfirmPassword1">Cara Bayar</label>
+      <select name="cara_bayar" id="cara_bayar" class="form-control">
+        <option value="UMUM">UMUM</option>
+        <option value="BPJS">BPJS</option>
+      </select>
+    </div>
 
-                    <div class="form-group">
-                      <label for="exampleInputEmail1">Poliklinik Tujuan</label>
-                      
+    <button type="submit" name="simpan" class="btn btn-primary mr-2">SIMPAN PENDAFTARAN</button>
+    <button class="btn btn-light">Kembali</button>
+  </form>
+</div>
 
-                      <select name="nama_poli" id="nama_poli" class="form-control" required>
-                           
-                              <?php 
-                    $query2="select * from jenis_poli order by id_poli";
-                    $tampil=mysqli_query($kon, $query2) or die(mysqli_error());
-                    while($data1=mysqli_fetch_array($tampil))
-                    {
-                    ?>
-                              
-                                  
-              
-              <option value="<?php echo $data1['nama_poli'];?>">-<?php echo $data1['nama_poli'];?></option>
-                <?php
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('#nama_poli').change(function() {
+    var selectedPoli = $(this).val();
+    $.ajax({
+      url: 'get_dokter.php', // Ubah dengan URL yang benar untuk mengambil data dokter dari server
+      method: 'POST',
+      data: { poli: selectedPoli },
+      success: function(response) {
+        var dokterSelect = $('#nama_dokter');
+        dokterSelect.empty();
+        $.each(response, function(key, value) {
+          dokterSelect.append($('<option></option>').attr('value', value).text(value));
+        });
+      }
+    });
+  });
+});
+</script>
 
-                 } 
-
-                 ?>
-                              
-                              </select> 
-
-
-                    </div>
-
-
-                  
-                  
-                  
-
-
-
-                    <div class="form-group">
-                      <label for="exampleInputEmail1">Nama dokter</label>
-                      
-
-                      <select name="nama_dokter" id="nama_dokter" class="form-control" required>
-                           
-                              <?php 
-                    $query2="select * from dokter order by id_dokter";
-                    $tampil=mysqli_query($kon, $query2) or die(mysqli_error());
-                    while($data1=mysqli_fetch_array($tampil))
-                    {
-                    ?>
-                              
-                                  
-              
-              <option value="<?php echo $data1['nama_dokter'];?>">-<?php echo $data1['nama_dokter'];?></option>
-                <?php
-
-                 } 
-
-                 ?>
-                              
-                              </select> 
-
-
-                    </div>
-
-
-                     <div class="form-group">
-                      <label for="exampleInputConfirmPassword1">Cara Bayar</label>
-                      
-                       <select name="cara_bayar" id="cara_bayar" class="form-control">
-                
-                                    <option value="UMUM">UMUM</option>
-                                    <option value="BPJS">BPJS</option>
-                
-              </select>
-
-
-                    </div>
-
-
-                    
-
-                    
-                    <button type="submit" name="simpan"  class="btn btn-primary mr-2">SiMPAN PENDAFTARAN</button>
-                    <button class="btn btn-light">Kembali</button>
-                  </form>
-                </div>
-              </div>
-            </div>
-             </div>
-            </div>
                      
                
                         
